@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MUI + Tailwind may both style, this file contains global resets if needed */
+html, body {
+  height: 100%;
+}
+* {
+  box-sizing: border-box;
+}

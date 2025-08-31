@@ -436,6 +436,7 @@ export default function ApplicationFormComponent() {
 
                     return (
                       <DatePicker
+                        data-testid="dob-input"
                         label="Date of Birth"
                         value={dayjsValue}
                         onChange={(newValue) => {

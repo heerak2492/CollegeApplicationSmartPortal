@@ -1,5 +1,6 @@
 // features/faculty/ApplicationsTable.tsx
 "use client";
+
 import React from "react";
 import {
   Paper,
@@ -19,11 +20,21 @@ import {
   CircularProgress,
   Box,
 } from "@mui/material";
-import type { ApplicationRecord } from "./types";
+import type { ApplicationRecord, ReviewStatus } from "./types";
 import { useApplicationsQuery, useUpdateApplicationStatus } from "./hooks";
 import FacultySearchBar from "./FacultySearchBar";
 
 type Order = "asc" | "desc";
+type SortKey = keyof ApplicationRecord;
+
+/** Defensive string coerce for filtering/rendering */
+const asString = (v: unknown) => (v == null ? "" : String(v));
+
+/** Normalize any sortable value (handles undefined) */
+const valueForCompare = (v: unknown): string | number => {
+  if (typeof v === "number") return v;
+  return asString(v).toLowerCase();
+};
 
 function stableSort<T>(array: T[], comparator: (a: T, b: T) => number) {
   const stabilized = array.map((el, index) => [el, index] as [T, number]);
@@ -35,52 +46,53 @@ function stableSort<T>(array: T[], comparator: (a: T, b: T) => number) {
   return stabilized.map((el) => el[0]);
 }
 
-function getComparator<Key extends keyof any>(
-  order: Order,
-  orderBy: Key,
-): (a: { [key in Key]: number | string }, b: { [key in Key]: number | string }) => number {
-  return order === "desc"
-    ? (a, b) => ((b[orderBy] as any) < (a[orderBy] as any) ? -1 : 1)
-    : (a, b) => ((a[orderBy] as any) < (b[orderBy] as any) ? -1 : 1);
+/** Undefined-safe comparator factory that works with optional fields */
+function getComparator<T, K extends keyof T>(order: Order, orderBy: K): (a: T, b: T) => number {
+  const toComparable = (v: unknown): string | number => {
+    if (typeof v === "number") return v;
+    if (v == null) return ""; // treat undefined/null as empty
+    return String(v).toLowerCase();
+  };
+  return (a, b) => {
+    const va = toComparable(a[orderBy] as unknown);
+    const vb = toComparable(b[orderBy] as unknown);
+    if (va < vb) return order === "asc" ? -1 : 1;
+    if (va > vb) return order === "asc" ? 1 : -1;
+    return 0;
+  };
 }
 
 export default function ApplicationsTable() {
   const { data, isLoading, isError } = useApplicationsQuery();
   const updateMutation = useUpdateApplicationStatus();
 
+  const rows: ApplicationRecord[] = data ?? [];
+
   const [pageIndex, setPageIndex] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [order, setOrder] = React.useState<Order>("asc");
-  const [orderBy, setOrderBy] = React.useState<keyof ApplicationRecord>("applicantFullName");
+  const [orderBy, setOrderBy] = React.useState<SortKey>("applicantFullName");
   const [filterText, setFilterText] = React.useState("");
 
   // Track which rows are updating so only those buttons disable
   const [pendingRowIds, setPendingRowIds] = React.useState<Set<string>>(new Set());
+  const setRowPending = (id: string, pending: boolean) =>
+    setPendingRowIds((prev) => {
+      const next = new Set(prev);
+      pending ? next.add(id) : next.delete(id);
+      return next;
+    });
 
   const handleRequestSort = (property: keyof ApplicationRecord) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
+    setOrderBy(property as SortKey);
   };
 
-  const filtered = (data || []).filter((r) =>
-    (r.applicantFullName + " " + r.intendedProgram + " " + r.status)
-      .toLowerCase()
-      .includes(filterText.toLowerCase()),
-  );
-
-  const sorted = stableSort(filtered, getComparator(order, orderBy));
-  const paged = sorted.slice(pageIndex * rowsPerPage, pageIndex * rowsPerPage + rowsPerPage);
-
-  const setRowPending = (id: string, pending: boolean) =>
-    setPendingRowIds((prev) => {
-      const next = new Set(prev);
-      if (pending) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-
-  const handleUpdateStatus = async (id: string, status: "Approved" | "Rejected") => {
+  const handleUpdateStatus = async (
+    id: string,
+    status: Extract<ReviewStatus, "Approved" | "Rejected">,
+  ) => {
     if (pendingRowIds.has(id)) return;
     setRowPending(id, true);
     try {
@@ -90,6 +102,21 @@ export default function ApplicationsTable() {
     }
   };
 
+  // Filter defensively (fields may be optional)
+  const filtered = rows.filter((r) =>
+    `${asString(r.applicantFullName)} ${asString(r.intendedProgram)} ${asString(r.status)}`
+      .toLowerCase()
+      .includes(filterText.toLowerCase()),
+  );
+
+  // Sort with comparator aligned to the actual row type
+  const sorted = stableSort<ApplicationRecord>(
+    filtered,
+    getComparator<ApplicationRecord, SortKey>(order, orderBy),
+  );
+
+  const paged = sorted.slice(pageIndex * rowsPerPage, pageIndex * rowsPerPage + rowsPerPage);
+
   return (
     <Paper variant="outlined">
       <Toolbar sx={{ gap: 1 }}>
@@ -97,13 +124,8 @@ export default function ApplicationsTable() {
           Applications
         </Typography>
 
-        {/* Right-aligned, fixed-width search (doesn't occupy full width) */}
-        <Box
-          sx={{
-            width: { xs: 220, sm: 260, md: 300 },
-            flexShrink: 0,
-          }}
-        >
+        {/* Right-aligned, fixed-width search */}
+        <Box sx={{ width: { xs: 220, sm: 260, md: 300 }, flexShrink: 0 }}>
           <FacultySearchBar
             searchQueryText={filterText}
             onSearchQueryTextChange={(v) => {
@@ -163,12 +185,13 @@ export default function ApplicationsTable() {
             )}
 
             {paged.map((row) => {
-              const isRowPending = pendingRowIds.has(JSON.stringify(row?.id));
+              const rowId = String(row.id);
+              const isRowPending = pendingRowIds.has(rowId);
               return (
-                <TableRow key={row.id} hover>
+                <TableRow key={rowId} hover>
                   <TableCell>{row.applicantFullName}</TableCell>
                   <TableCell>{row.intendedProgram}</TableCell>
-                  <TableCell>{new Date(row.submittedAtIso).toLocaleString()}</TableCell>
+                  <TableCell>{new Date(asString(row.submittedAtIso)).toLocaleString()}</TableCell>
                   <TableCell>
                     <Chip
                       size="small"
@@ -188,7 +211,7 @@ export default function ApplicationsTable() {
                         size="small"
                         variant="outlined"
                         disabled={row.status === "Approved" || isRowPending}
-                        onClick={() => handleUpdateStatus(JSON.stringify(row?.id), "Approved")}
+                        onClick={() => handleUpdateStatus(rowId, "Approved")}
                         startIcon={isRowPending ? <CircularProgress size={14} /> : undefined}
                       >
                         Approve
@@ -198,7 +221,7 @@ export default function ApplicationsTable() {
                         variant="outlined"
                         color="error"
                         disabled={row.status === "Rejected" || isRowPending}
-                        onClick={() => handleUpdateStatus(JSON.stringify(row?.id), "Rejected")}
+                        onClick={() => handleUpdateStatus(rowId, "Rejected")}
                         startIcon={isRowPending ? <CircularProgress size={14} /> : undefined}
                       >
                         Reject

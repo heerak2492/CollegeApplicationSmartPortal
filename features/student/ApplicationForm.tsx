@@ -573,6 +573,7 @@ export default function ApplicationFormComponent() {
                       {...field}
                       error={!!fieldState.error}
                       helperText={fieldState.error?.message}
+                      InputLabelProps={{ shrink: true }}
                       SelectProps={{ displayEmpty: true }}
                     >
                       <MenuItem value="">
@@ -603,6 +604,7 @@ export default function ApplicationFormComponent() {
                       }}
                       error={!!fieldState.error}
                       helperText={fieldState.error?.message}
+                      InputLabelProps={{ shrink: true }}
                       SelectProps={{ displayEmpty: true }}
                     >
                       <MenuItem value="">

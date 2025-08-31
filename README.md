@@ -19,10 +19,6 @@ Open http://localhost:3000
 - `yarn type-check` – TypeScript
 - `yarn test` – unit tests (Jest + RTL)
 
-## Environment
-
-Copy `.env.example` to `.env.local` and adjust as needed.
-
 ## Features
 
 - Student: multi-step form, PDF upload, profile completeness, AI chat with typing indicator, markdown, history + search, video tutorial with progress, transcript, notes, preview dialog, draft autosave.

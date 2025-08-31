@@ -1,9 +1,7 @@
-// app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
 import AppProviders from "./providers";
 import AppHeader from "@/components/common/AppHeader";
-import GradientBackground from "@/components/common/GradientBackground";
 import { Container, Box } from "@mui/material";
 import AppThemeProvider from "@/features/theme/ThemeProvider";
 
@@ -23,14 +21,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <AppProviders>
-          <GradientBackground>
-            <AppThemeProvider>
-              <AppHeader />
-              <Container maxWidth="lg">
-                <Box py={3}>{children}</Box>
-              </Container>
-            </AppThemeProvider>
-          </GradientBackground>
+          <AppThemeProvider>
+            <AppHeader />
+            <Container maxWidth="lg">
+              <Box py={3}>{children}</Box>
+            </Container>
+          </AppThemeProvider>
         </AppProviders>
       </body>
     </html>

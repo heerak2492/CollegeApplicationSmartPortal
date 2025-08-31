@@ -1,4 +1,3 @@
-// features/student/schemas.ts
 import { z } from "zod";
 
 const currentYear = new Date().getFullYear();
@@ -11,7 +10,6 @@ const isValidIsoDate = (s: string) => {
   return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
 };
 
-// ---------- Schemas (unchanged) ----------
 export const personalDetailsSchema = z.object({
   fullName: z.string().min(1, "Full Name is required"),
   emailAddress: z.string().email("Enter a valid email address"),

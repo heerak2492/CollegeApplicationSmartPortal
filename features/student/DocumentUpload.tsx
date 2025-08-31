@@ -1,4 +1,3 @@
-// features/student/DocumentUpload.tsx
 "use client";
 
 import * as React from "react";
@@ -59,7 +58,6 @@ export default function DocumentUpload({
       status: "queued",
     }));
     setItems((prev) => [...prev, ...added]);
-    // auto-start upload
     added.forEach((it) => startUpload(it));
   }, []);
 
@@ -82,12 +80,11 @@ export default function DocumentUpload({
     setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, status: "uploading" } : it)));
     try {
       const formData = new FormData();
-      // server supports either "files" (many) or "file" (single); we send "file" here
       formData.append("file", item.file);
 
       const res = await fetch("/api/upload", {
         method: "POST",
-        body: formData, // DO NOT set Content-Type; browser sets multipart boundary
+        body: formData,
       });
 
       const data = await res.json();
@@ -222,7 +219,6 @@ export default function DocumentUpload({
           <Button
             variant="outlined"
             onClick={() => {
-              // trigger the hidden input from dropzone
               const input = document.querySelector<HTMLInputElement>('input[type="file"]');
               input?.click();
             }}

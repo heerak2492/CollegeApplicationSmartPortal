@@ -1,4 +1,3 @@
-// components/AppHeader.tsx
 "use client";
 
 import React from "react";
@@ -6,19 +5,12 @@ import { AppBar, Toolbar, Typography, IconButton, Box, Button, Tooltip } from "@
 import Link from "next/link";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
-
-// IMPORTANT: import the context from your ThemeProvider
-// If you followed my earlier files, this is the correct path:
 import { ColorModeContext } from "@/features/theme/ThemeProvider";
 import AppLogo from "../AppLogo";
-// If your project exposes it elsewhere, update the import accordingly.
 
 export default function AppHeader() {
   const colorModeContext = React.useContext(ColorModeContext);
-
-  // If the provider isn't mounted (or path is wrong), render nothing to avoid errors
   if (!colorModeContext) return null;
-
   const isDarkMode = colorModeContext.colorMode === "dark";
 
   return (

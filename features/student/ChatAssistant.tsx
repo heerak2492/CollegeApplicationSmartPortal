@@ -1,4 +1,3 @@
-// features/student/ChatAssistant.tsx
 "use client";
 
 import React from "react";
@@ -115,10 +114,8 @@ export default function ChatAssistant({ onAsk }: ChatAssistantProps) {
     [chatSessions, currentSessionId],
   );
 
-  // ----- Message state for current session (mirrors currentSession.messages) -----
   const [messages, setMessages] = React.useState<ChatMessage[]>(currentSession.messages);
 
-  // Load from localStorage **after** mount so SSR/first paint match
   React.useEffect(() => {
     const existing = loadSessionsFromStorage();
     if (existing.length) {
@@ -130,14 +127,12 @@ export default function ChatAssistant({ onAsk }: ChatAssistantProps) {
 
   React.useEffect(() => {
     setMessages(currentSession.messages);
-  }, [currentSessionId]); // when switching sessions, load its messages
+  }, [currentSessionId]);
 
-  // Persist sessions (debounced)
   useDebouncedEffect(() => {
     saveSessionsToStorage(chatSessions);
   }, [chatSessions]);
 
-  // Auto-update current session messages and metadata when messages change
   useDebouncedEffect(() => {
     setChatSessions((prev) =>
       prev.map((s) =>
@@ -145,7 +140,6 @@ export default function ChatAssistant({ onAsk }: ChatAssistantProps) {
           ? {
               ...s,
               messages,
-              // auto-name once user sends a first prompt
               title:
                 s.title === defaultSessionTitle && messages.length
                   ? messages.find((m) => m.role === "user")?.text.slice(0, 40) || s.title
@@ -157,7 +151,6 @@ export default function ChatAssistant({ onAsk }: ChatAssistantProps) {
     );
   }, [messages, currentSessionId]);
 
-  // ----- UI: history drawer / search / rename -----
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
   const [historyQueryText, setHistoryQueryText] = React.useState("");
   const filteredSessions = React.useMemo(() => {
@@ -188,14 +181,13 @@ export default function ChatAssistant({ onAsk }: ChatAssistantProps) {
     const newSession = makeEmptySession();
     setChatSessions((prev) => [newSession, ...prev]);
     setCurrentSessionId(newSession.id);
-    setMessages([]); // reset message panel
+    setMessages([]);
   }
 
   function deleteSession(sessionId: string) {
     setChatSessions((prev) => {
       const next = prev.filter((s) => s.id !== sessionId);
       if (!next.length) next.push(makeEmptySession());
-      // move current if we deleted it
       if (sessionId === currentSessionId) {
         setCurrentSessionId(next[0].id);
         setMessages(next[0].messages);
@@ -224,7 +216,6 @@ export default function ChatAssistant({ onAsk }: ChatAssistantProps) {
     reader.onload = () => {
       try {
         const parsed = JSON.parse(String(reader.result));
-        // Accept either a full session or a raw messages array
         let sessionToAdd: ChatSession;
         if (Array.isArray(parsed)) {
           sessionToAdd = {
@@ -265,7 +256,6 @@ export default function ChatAssistant({ onAsk }: ChatAssistantProps) {
     reader.readAsText(file);
   }
 
-  // ----- Composer / ask flow -----
   const [queryText, setQueryText] = React.useState("");
   const [isTyping, setIsTyping] = React.useState(false);
   const endRef = React.useRef<HTMLDivElement | null>(null);
@@ -432,8 +422,7 @@ export default function ChatAssistant({ onAsk }: ChatAssistantProps) {
                   borderColor: "divider",
                   maxWidth: { xs: "80%", sm: "75%" },
                   position: "relative",
-                  pr: 6, // ✅ reserve space for the delete icon so text never overlaps
-                  // show the action only when the bubble is hovered or focused
+                  pr: 6,
                   "&:hover .messageAction, &:focus-within .messageAction": {
                     opacity: 1,
                     pointerEvents: "auto",
@@ -458,8 +447,8 @@ export default function ChatAssistant({ onAsk }: ChatAssistantProps) {
                     position: "absolute",
                     top: 4,
                     right: 4,
-                    opacity: 0, // hidden by default
-                    pointerEvents: "none", // don't steal hover when hidden
+                    opacity: 0,
+                    pointerEvents: "none",
                     transition: "opacity .15s ease",
                     bgcolor: "background.paper",
                     boxShadow: 1,
@@ -550,7 +539,6 @@ export default function ChatAssistant({ onAsk }: ChatAssistantProps) {
         </Tooltip>
       </Stack>
 
-      {/* tiny keyframes for typing dots */}
       <style jsx global>{`
         @keyframes blink {
           0% {

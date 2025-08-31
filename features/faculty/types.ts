@@ -1,4 +1,3 @@
-// features/faculty/types.ts
 export type ReviewStatus = "Pending" | "Approved" | "Rejected";
 
 export interface ApplicationRecord {

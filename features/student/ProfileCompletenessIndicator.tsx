@@ -1,4 +1,3 @@
-// features/student/ProfileCompletenessIndicator.tsx
 "use client";
 
 import * as React from "react";
@@ -9,11 +8,9 @@ export default function ProfileCompletenessIndicator({
 }: {
   percentComplete: number;
 }) {
-  // Capture the server-rendered value so the first client render matches exactly.
   const initialPercentRef = React.useRef(Math.max(0, Math.min(100, Math.round(percentComplete))));
   const [displayPercent, setDisplayPercent] = React.useState(initialPercentRef.current);
 
-  // After hydration, update to the latest value computed from client state/localStorage.
   React.useEffect(() => {
     const clamped = Math.max(0, Math.min(100, Math.round(percentComplete)));
     setDisplayPercent(clamped);

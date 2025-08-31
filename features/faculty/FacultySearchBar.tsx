@@ -8,7 +8,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 export interface FacultySearchBarProps {
   searchQueryText: string;
   onSearchQueryTextChange: (nextValue: string) => void;
-  onSearchSubmit?: () => void; // optional: fire when user presses Enter
+  onSearchSubmit?: () => void;
   autoFocus?: boolean;
   placeholderText?: string;
 }
@@ -24,7 +24,6 @@ export default function FacultySearchBar({
 
   const clearSearch = () => {
     onSearchQueryTextChange("");
-    // keep focus in the input after clearing
     requestAnimationFrame(() => inputReference.current?.focus());
   };
 

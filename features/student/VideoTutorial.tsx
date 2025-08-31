@@ -1,4 +1,3 @@
-// features/student/VideoTutorial.tsx
 "use client";
 
 import * as React from "react";
@@ -9,7 +8,6 @@ const PROGRESS_KEY = "student_video_progress_percent";
 const NOTES_KEY = "student_video_notes";
 
 export default function VideoTutorial() {
-  // Server should render a deterministic value; use 0 for both SSR and initial client render.
   const initialPercentRef = React.useRef<number>(0);
   const [watchedPercent, setWatchedPercent] = React.useState<number>(initialPercentRef.current);
   const [notesText, setNotesText] = React.useState<string>("");
@@ -52,7 +50,6 @@ export default function VideoTutorial() {
           ref={videoRef}
           controls
           style={{ width: "100%", borderRadius: 8 }}
-          // Use any sample MP4 you already have or keep this same placeholder
           src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
         />
 

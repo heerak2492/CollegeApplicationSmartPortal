@@ -1,10 +1,9 @@
-// app/api/upload/route.ts
 import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 
-export const runtime = "nodejs"; // enable Node APIs (fs)
-export const dynamic = "force-dynamic"; // don't pre-render this route
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME = ["application/pdf"];

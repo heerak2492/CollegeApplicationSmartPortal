@@ -1,4 +1,3 @@
-// features/student/ApplicationForm.tsx
 "use client";
 import React from "react";
 import {
@@ -34,7 +33,6 @@ import {
   programSelectionSchema,
   initialEmptyApplicationValues,
   type ApplicationFormValues,
-  type ApplicationFormPayload,
 } from "./schemas";
 import DocumentUpload from "./DocumentUpload";
 import ProfileCompletenessIndicator from "./ProfileCompletenessIndicator";
@@ -43,11 +41,9 @@ import dayjs from "dayjs";
 
 const steps = ["Personal Details", "Education Details", "Program Selection", "Documents"];
 
-// LocalStorage key (manual drafts only)
 const applicationFormDraftStorageKey = "studentApplicationDraft.v2";
 
 export default function ApplicationFormComponent() {
-  // Always start fresh; we will *offer* to resume a saved draft after mount
   const formMethods = useForm<ApplicationFormValues>({
     defaultValues: initialEmptyApplicationValues,
     resolver: zodResolver(applicationFormSchema),
@@ -79,8 +75,6 @@ export default function ApplicationFormComponent() {
   const [errorSnackbarText, setErrorSnackbarText] = React.useState<string | null>(null);
   const [infoSnackbarText, setInfoSnackbarText] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  // --- Draft offer banner state ---
   const [isDraftOfferVisible, setIsDraftOfferVisible] = React.useState(false);
   const [draftLastSavedIso, setDraftLastSavedIso] = React.useState<string | null>(null);
 
@@ -156,7 +150,6 @@ export default function ApplicationFormComponent() {
       sectionPercent(documentsFields, watchedValues, formMethods.formState.dirtyFields),
   );
 
-  // ---------- Step validation / navigation ----------
   const handleNext = async () => {
     let schema;
     if (currentStepIndex === 0) schema = personalDetailsSchema;
@@ -175,7 +168,6 @@ export default function ApplicationFormComponent() {
 
   const handlePrevious = () => setCurrentStepIndex((i) => Math.max(0, i - 1));
 
-  // ---------- Submit (validate all, jump to first error, or POST) ----------
   const getStepIndexForField = (field: keyof ApplicationFormValues): number => {
     if (personalFields.includes(field)) return 0;
     if (educationFields.includes(field)) return 1;
@@ -296,10 +288,9 @@ export default function ApplicationFormComponent() {
     }
   };
 
-  // ---------- Draft helpers ----------
   const saveDraft = () => {
     try {
-      const values = formMethods.getValues(); // partial allowed; no validation here
+      const values = formMethods.getValues();
       const snapshot = {
         values,
         currentStepIndex,
@@ -320,7 +311,6 @@ export default function ApplicationFormComponent() {
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (!parsed || !parsed.values) return;
-      // Reset form and step from snapshot
       formMethods.reset(parsed.values as ApplicationFormValues);
       setCurrentStepIndex(
         typeof parsed.currentStepIndex === "number" ? parsed.currentStepIndex : 0,
@@ -343,7 +333,6 @@ export default function ApplicationFormComponent() {
     }
   };
 
-  // Remove a document URL from the form value
   const removeDocumentByUrl = (urlToRemove: string) => {
     const existing = formMethods.getValues("uploadedDocumentUrls") || [];
     const next = existing.filter((u) => u !== urlToRemove);
@@ -662,14 +651,12 @@ export default function ApplicationFormComponent() {
           )}
 
           {/* Wizard footer actions */}
-          {/* Wizard footer actions */}
           <Box display="flex" justifyContent="space-between" mt={1}>
             <Button onClick={handlePrevious} disabled={currentStepIndex === 0 || isSubmitting}>
               Previous
             </Button>
 
             <Stack direction="row" gap={1} alignItems="center">
-              {/* Save Draft — disabled until a Personal field is filled */}
               <Tooltip
                 title={
                   hasAnyPersonalInput
@@ -689,7 +676,6 @@ export default function ApplicationFormComponent() {
                 </span>
               </Tooltip>
 
-              {/* Preview — disabled until a Personal field is filled */}
               <Tooltip
                 title={
                   hasAnyPersonalInput
@@ -720,8 +706,6 @@ export default function ApplicationFormComponent() {
             </Stack>
           </Box>
         </Stack>
-
-        {/* Structured Preview (live) */}
         <Dialog
           open={isPreviewOpen}
           onClose={() => setIsPreviewOpen(false)}
@@ -847,7 +831,6 @@ export default function ApplicationFormComponent() {
         <Dialog
           open={isSuccessDialogOpen}
           onClose={() => {
-            // After success, start a fresh application form
             formMethods.reset(initialEmptyApplicationValues);
             setCurrentStepIndex(0);
             setIsPreviewOpen(false);

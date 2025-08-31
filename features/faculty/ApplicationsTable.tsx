@@ -1,4 +1,3 @@
-// features/faculty/ApplicationsTable.tsx
 "use client";
 
 import React from "react";
@@ -27,14 +26,7 @@ import FacultySearchBar from "./FacultySearchBar";
 type Order = "asc" | "desc";
 type SortKey = keyof ApplicationRecord;
 
-/** Defensive string coerce for filtering/rendering */
 const asString = (v: unknown) => (v == null ? "" : String(v));
-
-/** Normalize any sortable value (handles undefined) */
-const valueForCompare = (v: unknown): string | number => {
-  if (typeof v === "number") return v;
-  return asString(v).toLowerCase();
-};
 
 function stableSort<T>(array: T[], comparator: (a: T, b: T) => number) {
   const stabilized = array.map((el, index) => [el, index] as [T, number]);
@@ -46,11 +38,10 @@ function stableSort<T>(array: T[], comparator: (a: T, b: T) => number) {
   return stabilized.map((el) => el[0]);
 }
 
-/** Undefined-safe comparator factory that works with optional fields */
 function getComparator<T, K extends keyof T>(order: Order, orderBy: K): (a: T, b: T) => number {
   const toComparable = (v: unknown): string | number => {
     if (typeof v === "number") return v;
-    if (v == null) return ""; // treat undefined/null as empty
+    if (v == null) return "";
     return String(v).toLowerCase();
   };
   return (a, b) => {
@@ -74,7 +65,6 @@ export default function ApplicationsTable() {
   const [orderBy, setOrderBy] = React.useState<SortKey>("applicantFullName");
   const [filterText, setFilterText] = React.useState("");
 
-  // Track which rows are updating so only those buttons disable
   const [pendingRowIds, setPendingRowIds] = React.useState<Set<string>>(new Set());
   const setRowPending = (id: string, pending: boolean) =>
     setPendingRowIds((prev) => {
@@ -102,14 +92,12 @@ export default function ApplicationsTable() {
     }
   };
 
-  // Filter defensively (fields may be optional)
   const filtered = rows.filter((r) =>
     `${asString(r.applicantFullName)} ${asString(r.intendedProgram)} ${asString(r.status)}`
       .toLowerCase()
       .includes(filterText.toLowerCase()),
   );
 
-  // Sort with comparator aligned to the actual row type
   const sorted = stableSort<ApplicationRecord>(
     filtered,
     getComparator<ApplicationRecord, SortKey>(order, orderBy),
@@ -124,7 +112,6 @@ export default function ApplicationsTable() {
           Applications
         </Typography>
 
-        {/* Right-aligned, fixed-width search */}
         <Box sx={{ width: { xs: 220, sm: 260, md: 300 }, flexShrink: 0 }}>
           <FacultySearchBar
             searchQueryText={filterText}

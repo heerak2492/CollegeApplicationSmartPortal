@@ -56,16 +56,13 @@ export default function AppThemeProvider({ children }: { children: React.ReactNo
     [mode],
   );
 
-  // Rebuild theme whenever mode changes
   const theme = React.useMemo(() => buildTheme(mode), [mode]);
 
-  // Avoid color flicker/hydration mismatch
   if (!mounted) return <div style={{ visibility: "hidden" }}>{children}</div>;
 
   return (
     <ColorModeContext.Provider value={value}>
       <ThemeProvider theme={theme}>
-        {/* enableColorScheme makes browser widgets match theme */}
         <CssBaseline enableColorScheme />
         {children}
       </ThemeProvider>

@@ -1,3 +1,4 @@
+import InstantNavigateButton from "@/components/InstantNavigateButton";
 import { Card, CardContent, Typography, Grid, Button, CardActions, Box } from "@mui/material";
 import Link from "next/link";
 
@@ -30,9 +31,9 @@ function PortalCard({
         </Typography>
       </CardContent>
       <CardActions sx={{ p: 2 }}>
-        <Button variant="contained" fullWidth component={Link} href={href}>
+        <InstantNavigateButton href={href} variant="contained" loadingLabel={`Opening ${title}…`}>
           Open {title}
-        </Button>
+        </InstantNavigateButton>
       </CardActions>
     </Card>
   );

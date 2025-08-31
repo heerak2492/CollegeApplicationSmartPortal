@@ -10,6 +10,7 @@ import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 // IMPORTANT: import the context from your ThemeProvider
 // If you followed my earlier files, this is the correct path:
 import { ColorModeContext } from "@/features/theme/ThemeProvider";
+import AppLogo from "../AppLogo";
 // If your project exposes it elsewhere, update the import accordingly.
 
 export default function AppHeader() {
@@ -23,10 +24,13 @@ export default function AppHeader() {
   return (
     <AppBar position="sticky">
       <Toolbar>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          College Application Smart Portal
+        <Typography
+          variant="h6"
+          sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1 }}
+        >
+          <AppLogo />
+          <span>College Application Smart Portal</span>
         </Typography>
-
         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
           <Button color="inherit" component={Link} href="/">
             Home

@@ -1,4 +1,4 @@
-import { Grid, Typography } from "@mui/material";
+import { Grid, Paper, Typography } from "@mui/material";
 import ApplicationFormComponent from "@/features/student/ApplicationForm";
 import ChatAssistant from "@/features/student/ChatAssistant";
 import VideoTutorial from "@/features/student/VideoTutorial";
@@ -11,9 +11,11 @@ export default function StudentPortalPage() {
   return (
     <Grid container spacing={2}>
       <Grid item xs={12}>
-        <Typography variant="h4" gutterBottom>
-          College Application Smart Portal
-        </Typography>
+        <Paper elevation={0} sx={{ p: 2, bgcolor: "background.paper" }}>
+          <Typography variant="h4" gutterBottom color="text.primary">
+            College Application Smart Portal
+          </Typography>
+        </Paper>
       </Grid>
 
       <Grid item xs={12} md={7}>

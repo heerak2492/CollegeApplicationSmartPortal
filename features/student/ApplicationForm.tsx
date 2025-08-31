@@ -67,6 +67,22 @@ export default function ApplicationFormComponent() {
   });
 
   const watchedValues = useWatch({ control: formMethods.control }) as ApplicationForm;
+  // Enable Save/Preview only after at least one Personal field is filled
+  const hasAnyPersonalInput = React.useMemo(() => {
+    const trim = (s?: string) => (typeof s === "string" ? s.trim() : "");
+    return Boolean(
+      trim(watchedValues.fullName) ||
+        trim(watchedValues.emailAddress) ||
+        trim(watchedValues.phoneNumber) ||
+        trim(watchedValues.dateOfBirth),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    watchedValues.fullName,
+    watchedValues.emailAddress,
+    watchedValues.phoneNumber,
+    watchedValues.dateOfBirth,
+  ]);
 
   const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
@@ -247,6 +263,13 @@ export default function ApplicationFormComponent() {
 
       // Build payload and POST
       const values = formMethods.getValues();
+      let graduationYearNumber: number | undefined;
+      if (typeof values.graduationYear === "string") {
+        const trimmed = values.graduationYear.trim();
+        graduationYearNumber = trimmed === "" ? undefined : Number(trimmed);
+      } else {
+        graduationYearNumber = Number(values.graduationYear);
+      }
       const payload = {
         applicantFullName: values.fullName,
         intendedProgram: values.intendedProgram,
@@ -255,10 +278,7 @@ export default function ApplicationFormComponent() {
         dateOfBirth: values.dateOfBirth,
         highSchoolName: values.highSchoolName,
         gpaScore: values.gpaScore,
-        graduationYear:
-          typeof values.graduationYear === "string" && values.graduationYear.trim() === ""
-            ? undefined
-            : Number(values.graduationYear),
+        graduationYear: graduationYearNumber,
         intakeSeason: values.intakeSeason,
         hasScholarshipInterest: values.hasScholarshipInterest,
         uploadedDocumentUrls: values.uploadedDocumentUrls || [],
@@ -652,31 +672,51 @@ export default function ApplicationFormComponent() {
           )}
 
           {/* Wizard footer actions */}
+          {/* Wizard footer actions */}
           <Box display="flex" justifyContent="space-between" mt={1}>
             <Button onClick={handlePrevious} disabled={currentStepIndex === 0 || isSubmitting}>
               Previous
             </Button>
+
             <Stack direction="row" gap={1} alignItems="center">
-              <Tooltip title="Save a draft locally (you can resume later)">
+              {/* Save Draft — disabled until a Personal field is filled */}
+              <Tooltip
+                title={
+                  hasAnyPersonalInput
+                    ? "Save a draft locally (you can resume later)"
+                    : "Enter at least one Personal detail to enable"
+                }
+              >
                 <span>
                   <Button
                     variant="outlined"
                     startIcon={<SaveOutlinedIcon />}
                     onClick={saveDraft}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !hasAnyPersonalInput}
                   >
                     Save Draft
                   </Button>
                 </span>
               </Tooltip>
 
-              <Button
-                variant="outlined"
-                onClick={() => setIsPreviewOpen(true)}
-                disabled={isSubmitting}
+              {/* Preview — disabled until a Personal field is filled */}
+              <Tooltip
+                title={
+                  hasAnyPersonalInput
+                    ? "Preview your application"
+                    : "Enter at least one Personal detail to enable"
+                }
               >
-                Preview
-              </Button>
+                <span>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setIsPreviewOpen(true)}
+                    disabled={isSubmitting || !hasAnyPersonalInput}
+                  >
+                    Preview
+                  </Button>
+                </span>
+              </Tooltip>
 
               {currentStepIndex < steps.length - 1 ? (
                 <Button variant="contained" onClick={handleNext} disabled={isSubmitting}>

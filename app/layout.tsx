@@ -5,6 +5,7 @@ import AppProviders from "./providers";
 import AppHeader from "@/components/common/AppHeader";
 import GradientBackground from "@/components/common/GradientBackground";
 import { Container, Box } from "@mui/material";
+import AppThemeProvider from "@/features/theme/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "College Application Smart Portal",
@@ -17,10 +18,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AppProviders>
           <GradientBackground>
-            <AppHeader />
-            <Container maxWidth="lg">
-              <Box py={3}>{children}</Box>
-            </Container>
+            <AppThemeProvider>
+              <AppHeader />
+              <Container maxWidth="lg">
+                <Box py={3}>{children}</Box>
+              </Container>
+            </AppThemeProvider>
           </GradientBackground>
         </AppProviders>
       </body>

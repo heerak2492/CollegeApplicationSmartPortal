@@ -13,13 +13,15 @@ import {
   TableSortLabel,
   Toolbar,
   Typography,
-  TextField,
-  Button,
   Stack,
   Chip,
+  Button,
+  CircularProgress,
+  Box,
 } from "@mui/material";
 import type { ApplicationRecord } from "./types";
 import { useApplicationsQuery, useUpdateApplicationStatus } from "./hooks";
+import FacultySearchBar from "./FacultySearchBar";
 
 type Order = "asc" | "desc";
 
@@ -52,6 +54,9 @@ export default function ApplicationsTable() {
   const [orderBy, setOrderBy] = React.useState<keyof ApplicationRecord>("applicantFullName");
   const [filterText, setFilterText] = React.useState("");
 
+  // Track which rows are updating so only those buttons disable
+  const [pendingRowIds, setPendingRowIds] = React.useState<Set<string>>(new Set());
+
   const handleRequestSort = (property: keyof ApplicationRecord) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
@@ -67,19 +72,51 @@ export default function ApplicationsTable() {
   const sorted = stableSort(filtered, getComparator(order, orderBy));
   const paged = sorted.slice(pageIndex * rowsPerPage, pageIndex * rowsPerPage + rowsPerPage);
 
+  const setRowPending = (id: string, pending: boolean) =>
+    setPendingRowIds((prev) => {
+      const next = new Set(prev);
+      if (pending) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+
+  const handleUpdateStatus = async (id: string, status: "Approved" | "Rejected") => {
+    if (pendingRowIds.has(id)) return;
+    setRowPending(id, true);
+    try {
+      await updateMutation.mutateAsync({ id, status });
+    } finally {
+      setRowPending(id, false);
+    }
+  };
+
   return (
     <Paper variant="outlined">
-      <Toolbar>
+      <Toolbar sx={{ gap: 1 }}>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Applications
         </Typography>
-        <TextField
-          size="small"
-          label="Search"
-          value={filterText}
-          onChange={(e) => setFilterText(e.target.value)}
-        />
+
+        {/* Right-aligned, fixed-width search (doesn't occupy full width) */}
+        <Box
+          sx={{
+            width: { xs: 220, sm: 260, md: 300 },
+            flexShrink: 0,
+          }}
+        >
+          <FacultySearchBar
+            searchQueryText={filterText}
+            onSearchQueryTextChange={(v) => {
+              setFilterText(v);
+              setPageIndex(0);
+            }}
+            onSearchSubmit={() => setPageIndex(0)}
+            autoFocus={false}
+            placeholderText="Search applications…"
+          />
+        </Box>
       </Toolbar>
+
       <TableContainer>
         <Table size="small" aria-label="applications table">
           <TableHead>
@@ -107,6 +144,7 @@ export default function ApplicationsTable() {
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
+
           <TableBody>
             {isLoading && (
               <TableRow>
@@ -123,50 +161,57 @@ export default function ApplicationsTable() {
                 <TableCell colSpan={5}>No results.</TableCell>
               </TableRow>
             )}
-            {paged.map((row) => (
-              <TableRow key={row.id} hover>
-                <TableCell>{row.applicantFullName}</TableCell>
-                <TableCell>{row.intendedProgram}</TableCell>
-                <TableCell>{new Date(row.submittedAtIso).toLocaleString()}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={row.status}
-                    color={
-                      row.status === "Approved"
-                        ? "success"
-                        : row.status === "Rejected"
-                          ? "error"
-                          : "default"
-                    }
-                  />
-                </TableCell>
-                <TableCell align="right">
-                  <Stack direction="row" gap={1} justifyContent="flex-end">
-                    <Button
+
+            {paged.map((row) => {
+              const isRowPending = pendingRowIds.has(JSON.stringify(row?.id));
+              return (
+                <TableRow key={row.id} hover>
+                  <TableCell>{row.applicantFullName}</TableCell>
+                  <TableCell>{row.intendedProgram}</TableCell>
+                  <TableCell>{new Date(row.submittedAtIso).toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Chip
                       size="small"
-                      variant="outlined"
-                      disabled={row.status === "Approved" || updateMutation.isPending}
-                      onClick={() => updateMutation.mutate({ id: row.id, status: "Approved" })}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="error"
-                      disabled={row.status === "Rejected" || updateMutation.isPending}
-                      onClick={() => updateMutation.mutate({ id: row.id, status: "Rejected" })}
-                    >
-                      Reject
-                    </Button>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
+                      label={row.status}
+                      color={
+                        row.status === "Approved"
+                          ? "success"
+                          : row.status === "Rejected"
+                            ? "error"
+                            : "default"
+                      }
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Stack direction="row" gap={1} justifyContent="flex-end">
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        disabled={row.status === "Approved" || isRowPending}
+                        onClick={() => handleUpdateStatus(JSON.stringify(row?.id), "Approved")}
+                        startIcon={isRowPending ? <CircularProgress size={14} /> : undefined}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        disabled={row.status === "Rejected" || isRowPending}
+                        onClick={() => handleUpdateStatus(JSON.stringify(row?.id), "Rejected")}
+                        startIcon={isRowPending ? <CircularProgress size={14} /> : undefined}
+                      >
+                        Reject
+                      </Button>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
+
       <TablePagination
         component="div"
         count={sorted.length}

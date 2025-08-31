@@ -28,11 +28,13 @@ import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import {
-  ApplicationForm,
   applicationFormSchema,
   personalDetailsSchema,
   educationDetailsSchema,
   programSelectionSchema,
+  initialEmptyApplicationValues,
+  type ApplicationFormValues,
+  type ApplicationFormPayload,
 } from "./schemas";
 import DocumentUpload from "./DocumentUpload";
 import ProfileCompletenessIndicator from "./ProfileCompletenessIndicator";
@@ -44,29 +46,15 @@ const steps = ["Personal Details", "Education Details", "Program Selection", "Do
 // LocalStorage key (manual drafts only)
 const applicationFormDraftStorageKey = "studentApplicationDraft.v2";
 
-const initialEmptyApplicationValues: ApplicationForm = {
-  fullName: "",
-  emailAddress: "",
-  phoneNumber: "",
-  dateOfBirth: "",
-  highSchoolName: "",
-  gpaScore: 0,
-  graduationYear: "", // empty until user types
-  intendedProgram: "",
-  intakeSeason: "", // empty until chosen
-  hasScholarshipInterest: null, // user must explicitly choose Yes/No
-  uploadedDocumentUrls: [],
-};
-
 export default function ApplicationFormComponent() {
   // Always start fresh; we will *offer* to resume a saved draft after mount
-  const formMethods = useForm<ApplicationForm>({
+  const formMethods = useForm<ApplicationFormValues>({
     defaultValues: initialEmptyApplicationValues,
     resolver: zodResolver(applicationFormSchema),
     mode: "onBlur",
   });
 
-  const watchedValues = useWatch({ control: formMethods.control }) as ApplicationForm;
+  const watchedValues = useWatch({ control: formMethods.control }) as ApplicationFormValues;
   // Enable Save/Preview only after at least one Personal field is filled
   const hasAnyPersonalInput = React.useMemo(() => {
     const trim = (s?: string) => (typeof s === "string" ? s.trim() : "");
@@ -115,12 +103,12 @@ export default function ApplicationFormComponent() {
   }, []);
 
   // ---------- Progress (4 sections × 25%) with per-field increments ----------
-  function isFieldDirty(dirty: Record<string, any>, name: keyof ApplicationForm) {
+  function isFieldDirty(dirty: Record<string, any>, name: keyof ApplicationFormValues) {
     return Boolean((dirty as any)[name]);
   }
 
   function isFilledForProgress(
-    name: keyof ApplicationForm,
+    name: keyof ApplicationFormValues,
     value: any,
     dirty: Record<string, any>,
   ) {
@@ -134,27 +122,27 @@ export default function ApplicationFormComponent() {
     return Boolean(value);
   }
 
-  const personalFields: Array<keyof ApplicationForm> = [
+  const personalFields: Array<keyof ApplicationFormValues> = [
     "fullName",
     "emailAddress",
     "phoneNumber",
     "dateOfBirth",
   ];
-  const educationFields: Array<keyof ApplicationForm> = [
+  const educationFields: Array<keyof ApplicationFormValues> = [
     "highSchoolName",
     "gpaScore",
     "graduationYear",
   ];
-  const programFields: Array<keyof ApplicationForm> = [
+  const programFields: Array<keyof ApplicationFormValues> = [
     "intendedProgram",
     "intakeSeason",
     "hasScholarshipInterest",
   ];
-  const documentsFields: Array<keyof ApplicationForm> = ["uploadedDocumentUrls"];
+  const documentsFields: Array<keyof ApplicationFormValues> = ["uploadedDocumentUrls"];
 
   function sectionPercent(
-    fields: Array<keyof ApplicationForm>,
-    values: ApplicationForm,
+    fields: Array<keyof ApplicationFormValues>,
+    values: ApplicationFormValues,
     dirty: Record<string, any>,
   ) {
     const filled = fields.filter((f) => isFilledForProgress(f, (values as any)[f], dirty)).length;
@@ -188,7 +176,7 @@ export default function ApplicationFormComponent() {
   const handlePrevious = () => setCurrentStepIndex((i) => Math.max(0, i - 1));
 
   // ---------- Submit (validate all, jump to first error, or POST) ----------
-  const getStepIndexForField = (field: keyof ApplicationForm): number => {
+  const getStepIndexForField = (field: keyof ApplicationFormValues): number => {
     if (personalFields.includes(field)) return 0;
     if (educationFields.includes(field)) return 1;
     if (programFields.includes(field)) return 2;
@@ -196,7 +184,7 @@ export default function ApplicationFormComponent() {
     return 0;
   };
 
-  const focusField = (name: keyof ApplicationForm) => {
+  const focusField = (name: keyof ApplicationFormValues) => {
     const label = {
       fullName: "Full Name",
       emailAddress: "Email Address",
@@ -220,7 +208,7 @@ export default function ApplicationFormComponent() {
     el?.focus();
   };
 
-  function hasErrorForField(fieldName: keyof ApplicationForm, node: any): boolean {
+  function hasErrorForField(fieldName: keyof ApplicationFormValues, node: any): boolean {
     if (!node || typeof node !== "object") return false;
     if (fieldName in node) return true;
     for (const key of Object.keys(node)) {
@@ -231,8 +219,8 @@ export default function ApplicationFormComponent() {
 
   function findFirstErrorField(
     errs: Record<string, any>,
-    orderedFields: Array<keyof ApplicationForm>,
-  ): keyof ApplicationForm | null {
+    orderedFields: Array<keyof ApplicationFormValues>,
+  ): keyof ApplicationFormValues | null {
     for (const f of orderedFields) {
       if (hasErrorForField(f, errs)) return f;
     }
@@ -247,7 +235,7 @@ export default function ApplicationFormComponent() {
       const isValid = await formMethods.trigger(); // validate everything
       if (!isValid) {
         const errs = formMethods.formState.errors as Record<string, any>;
-        const ordered: Array<keyof ApplicationForm> = [
+        const ordered: Array<keyof ApplicationFormValues> = [
           ...personalFields,
           ...educationFields,
           ...programFields,
@@ -333,7 +321,7 @@ export default function ApplicationFormComponent() {
       const parsed = JSON.parse(raw);
       if (!parsed || !parsed.values) return;
       // Reset form and step from snapshot
-      formMethods.reset(parsed.values as ApplicationForm);
+      formMethods.reset(parsed.values as ApplicationFormValues);
       setCurrentStepIndex(
         typeof parsed.currentStepIndex === "number" ? parsed.currentStepIndex : 0,
       );
